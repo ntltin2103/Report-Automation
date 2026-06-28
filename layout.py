@@ -19,7 +19,7 @@ layout_css()
 
 # Khởi tạo trạng thái menu mặc định nếu hệ thống chạy lần đầu
 if "current_menu" not in st.session_state:
-    st.session_state.current_menu = "✨ AI Assets"
+    st.session_state.current_menu = "✨ Summary"
 
 
 # =========================================================================
@@ -37,29 +37,29 @@ with st.spinner("🔄 Hệ thống đang đồng bộ dữ liệu tổng thể t
 # 2. SIDEBAR NAVIGATION SYSTEM (REDESIGNED)
 # =========================================================================
 with st.sidebar:
-    st.markdown("<h2 style='color: #F8FAFC; font-size: 22px; font-weight:700; padding-left:8px; margin-bottom: 2rem;'>Studio.io</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #F8FAFC; font-size: 22px; font-weight:700; padding-left:8px; margin-bottom: 2rem;'>Menu</h2>", unsafe_allow_html=True)
     
     st.markdown("### Services")
-    if st.button("✨ AI Assets", use_container_width=True):
-        st.session_state.current_menu = "✨ AI Assets"
-    if st.button("📁 Portfolio", use_container_width=True):
-        st.session_state.current_menu = "📁 Portfolio"
-    if st.button("🌐 Web3", use_container_width=True):
+    if st.button("✨ Summary", use_container_width=True):
+        st.session_state.current_menu = "✨ Summary"
+    if st.button("📁 Chart", use_container_width=True):
+        st.session_state.current_menu = "📁 Report"
+    if st.button("🌐 Download PPT", use_container_width=True):
         st.session_state.current_menu = "🌐 Web3"
-    if st.button("🚀 SaaS", use_container_width=True):
-        st.session_state.current_menu = "🚀 SaaS"
+    # if st.button("🚀 SaaS", use_container_width=True):
+    #     st.session_state.current_menu = "🚀 SaaS"
     
-    st.markdown("### Tools")
-    if st.button("🎨 Design Tools", use_container_width=True):
-        st.session_state.current_menu = "🎨 Design Tools"
-    if st.button("🛠️ Dev Tools", use_container_width=True):
-        st.session_state.current_menu = "🛠️ Dev Tools"
+    # st.markdown("### Tools")
+    # if st.button("🎨 Design Tools", use_container_width=True):
+    #     st.session_state.current_menu = "🎨 Design Tools"
+    # if st.button("🛠️ Dev Tools", use_container_width=True):
+    #     st.session_state.current_menu = "🛠️ Dev Tools"
     
-    st.markdown("### E-Commerce")
-    if st.button("🛒 Storefronts", use_container_width=True):
-        st.session_state.current_menu = "🛒 Storefronts"
-    if st.button("💳 Finance", use_container_width=True):
-        st.session_state.current_menu = "💳 Finance"
+    # st.markdown("### E-Commerce")
+    # if st.button("🛒 Storefronts", use_container_width=True):
+    #     st.session_state.current_menu = "🛒 Storefronts"
+    # if st.button("💳 Finance", use_container_width=True):
+    #     st.session_state.current_menu = "💳 Finance"
 
 
 # =========================================================================
@@ -70,16 +70,68 @@ st.markdown('<div class="topbar-wrapper">', unsafe_allow_html=True)
 h_logo, h_search, h_btn, h_space, h_profile = st.columns([1.2, 3.8, 1.5, 1.3, 0.4])
 
 with h_logo:
-    st.markdown("<p style='margin:0; color:#F8FAFC; font-weight:700; font-size:15px; letter-spacing: 0.05em; white-space:nowrap;'>BẢNG ĐIỀU KHIỂN</p>", unsafe_allow_html=True)
+    st.markdown("<p style='margin:0; color:#F8FAFC; font-weight:700; font-size:15px; letter-spacing: 0.05em; white-space:nowrap;'>REPORT TEAM</p>", unsafe_allow_html=True)
 
+if "search_input_value" not in st.session_state:
+    st.session_state["search_input_value"] = ""
+
+# Hàm callback xử lý xóa sạch từ khóa khi bấm nút Clear
+def clear_search_callback():
+    st.session_state["search_input_key"] = ""  # Reset ô text_input về rỗng
+    st.toast("🧹 Đã xóa từ khóa tìm kiếm!", icon="✨")
+
+# --- 2. TRONG KHỐI ô tìm kiếm của em ---
 with h_search:
-    # Thêm một chút CSS riêng cho ô tìm kiếm để loại bỏ khoảng trống chênh vênh
+    # Chia h_search thành 2 cột nhỏ: 85% cho ô nhập, 15% cho nút Clear
     st.markdown('<div class="fixed-search-input">', unsafe_allow_html=True)
-    st.text_input("Global Search", placeholder="Tìm kiếm hệ thống, mã yêu cầu, nhân sự...", label_visibility="collapsed")
+    col_input, col_clear = st.columns([0.85, 0.15])
+    
+    with col_input:
+        search_val = st.text_input(
+            "Global Search", 
+            placeholder="Tìm số request, tên yêu cầu...", 
+            label_visibility="collapsed",
+            key="search_input_key"  # Gắn key để có thể clear bằng callback
+        )
+    
+    with col_clear:
+        # Nút Clear Search nhỏ gọn bằng icon hoặc chữ ngắn
+        if st.button("✖️", help="Xóa tìm kiếm", on_click=clear_search_callback, use_container_width=True):
+            pass
+            
     st.markdown('</div>', unsafe_allow_html=True)
 
+# --- 3. LOGIC XỬ LÝ KẾT QUẢ HIỂN THỊ (BUNG FULL MÀN HÌNH NGOÀI H_SEARCH) ---
+if search_val:
+    query = search_val.strip().lower()
+    
+    if not df_data.empty:
+        col_req = "REQUEST" if "REQUEST" in df_data.columns else ("Request" if "Request" in df_data.columns else None)
+        col_name = "Yêu cầu" if "Yêu cầu" in df_data.columns else None
+        
+        mask = pd.Series(False, index=df_data.index)
+        if col_req:
+            mask |= df_data[col_req].astype(str).str.lower().str.contains(query, na=False)
+        if col_name:
+            mask |= df_data[col_name].astype(str).str.lower().str.contains(query, na=False)
+        
+        df_search_result = df_data[mask]
+        
+        if not df_search_result.empty:
+            st.toast(f"🎉 Tìm thấy {len(df_search_result)} kết quả!", icon="✅")
+            st.markdown("---")
+            st.markdown(f"### 🔍 Kết quả tìm kiếm toàn cầu cho từ khóa: `{search_val}`")
+            
+            # Hiển thị bảng lớn full size giống hệt dashboard chính
+            st.dataframe(df_search_result, use_container_width=True, height=350)
+            st.markdown("---")
+        else:
+            st.toast("❌ Không tìm thấy, vui lòng nhập lại!", icon="⚠️")
+            st.warning(f"🚨 Không tìm thấy kết quả nào khớp với: '{search_val}'. Vui lòng kiểm tra lại số request hoặc tên yêu cầu.")
+    else:
+        st.toast("⚠️ Dữ liệu hệ thống đang trống!", icon="📊")
 with h_btn:
-    st.button("⚙️ Cấu hình bộ lọc", use_container_width=True)
+    st.button("Tìm kiếm", use_container_width=True)
 
 with h_space:
     st.markdown("<p style='color:#10B981; font-weight:600; text-align:right; margin:0; font-size:13px; white-space:nowrap;'>✓ Kết nối ổn định</p>", unsafe_allow_html=True)
@@ -96,7 +148,7 @@ st.markdown("<hr style='margin-top: 1rem; margin-bottom: 2rem; border-color: #1F
 # =========================================================================
 menu = st.session_state.current_menu
 
-if menu == "✨ AI Assets":
+if menu == "✨ Summary":
     # Layout cho nút refresh data
     left, center, right = st.columns([6, 3, 1])
     with left:
@@ -203,7 +255,7 @@ if menu == "✨ AI Assets":
     else:
         st.info("Chưa có dữ liệu hoặc bảng tính đang trống.")
     
-elif menu == "📁 Portfolio":
+elif menu == "📁 Report":
     # st.markdown(f"<h1 style='font-size:28px;'>{menu} Space</h1>", unsafe_allow_html=True)
     # st.markdown("<p style='color:#64748B;'>Danh mục hồ sơ và năng lực nhân sự phòng ban</p>", unsafe_allow_html=True)
     # st.markdown("<hr style='border-color: #1F2937;'>", unsafe_allow_html=True)
@@ -253,20 +305,20 @@ elif menu == "📁 Portfolio":
 
 elif menu == "🌐 Web3":
     st.markdown(f"<h1 style='font-size:28px;'>{menu} Dashboard</h1>", unsafe_allow_html=True)
-    st.info("Giao diện đang được thiết kế cấu trúc riêng cho nền tảng phi tập trung.")
+    st.info("Down Report tại đây.")
     
     if not df_data.empty:
         # Hiển thị bảng dữ liệu Web3
-        st.dataframe(df_data, use_container_width=True, height=400)
+        # st.dataframe(df_data, use_container_width=True, height=400)
         
         # Thêm một khoảng hở nhỏ cho thoáng giao diện
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
         
         # --- NÚT BẤM DOWNLOAD FILE POWERPOINT CHO MENU WEB3 ---
-        pptx_data = export_charts_to_pptx(df_data)
+        # pptx_data = export_charts_to_pptx(df_data)
         st.download_button(
             label="📥 Tải Slide Báo Cáo (PowerPoint)",
-            data=pptx_data,
+            data=export_charts_to_pptx(df_data),
             file_name=f"Executive_Report_{datetime.date.today().strftime('%Y%m%d')}.pptx",
             mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             use_container_width=True

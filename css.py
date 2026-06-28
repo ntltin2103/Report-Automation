@@ -6,7 +6,17 @@ def layout_css():
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         /* ĐỒNG BỘ FONT CHỮ TOÀN APP */
-        html, body, [data-testid="stAppViewContainer"], .stMarkdown, p, button, span, label {
+        html, body, [data-testid="stAppViewContainer"], p, h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', sans-serif !important;
+        }
+
+        /* Ép font riêng cho text bên trong markdown nhưng chừa các icon đặc biệt ra */
+        .stMarkdown div p, .stMarkdown span:not([class*="material"]) {
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        /* Chỉ ép font cho text của nút bấm, giữ nguyên font mã hóa icon hệ thống */
+        div.stButton > button div p, div.stButton > button {
             font-family: 'Inter', sans-serif !important;
         }
 

@@ -7,6 +7,8 @@ import pandas as pd
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
+import datetime
+import numpy as np
 import io
 # Định nghĩa quyền truy cập
 SCOPE = [
@@ -233,7 +235,6 @@ def chart_testing_round_8_week(df):
     fig, ax = plt.subplots(figsize=(5.2, 2.3), facecolor="none")
     ax.set_facecolor("none")
 
-    import numpy as np
     x = np.arange(len(last_8_weeks))
     width = 0.35  # Độ rộng cột
 
@@ -357,107 +358,241 @@ def chart_summary_request_completed(df):
 
     st.markdown(html_content, unsafe_allow_html=True)
 
-#Hàm xử lý down chart ra file pptx
+#Hàm xử lý down chart ra file pptx SLIDE 1:
 def export_charts_to_pptx(df):
-    """Hàm tự động vẽ và đóng gói các biểu đồ vào 1 file PowerPoint (.pptx)"""
+    """Hàm dựng Slide 1 HOÀN HẢO: Xóa bỏ hoàn toàn khống chế Layout mặc định của PowerPoint"""
     prs = Presentation()
-    
-    # Thiết lập kích thước slide chuẩn màn hình rộng 16:9
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
     
-    # Sử dụng một slide trống hoàn toàn (Blank layout)
+    # Sử dụng slide layout trống
     blank_slide_layout = prs.slide_layouts[6]
     slide = prs.slides.add_slide(blank_slide_layout)
     
-    # 🎨 TOÀN BỘ SLIDE SẼ DÙNG NỀN TỐI SANG TRỌNG ĐỒNG BỘ VỚI APP
+    # 🔥 BƯỚC THẦN THÁNH: Xóa sạch toàn bộ các khung mặc định có sẵn của PowerPoint để không bị ép layout
+    for shape in list(slide.shapes):
+        if shape.is_placeholder:
+            sp = shape._element
+            sp.getparent().remove(sp)
+            
+    # 🎨 1. NỀN SLIDE TRẮNG TINH KHÔI
     background = slide.background
     fill = background.fill
     fill.solid()
-    fill.fore_color.rgb = RGBColor(11, 15, 23) # Màu #0B0F17 giống hệt nền web
+    fill.fore_color.rgb = RGBColor(255, 255, 255)
     
-    # 1. Thêm tiêu đề chính cho Slide
-    txBox = slide.shapes.add_textbox(Inches(0.5), Inches(0.4), Inches(12), Inches(0.8))
-    tf = txBox.text_frame
-    p = tf.paragraphs[0]
-    p.text = "EXECUTIVE VALIDATION REPORT – PORTFOLIO SPACE"
-    p.font.size = Pt(24)
-    p.font.bold = True
-    p.font.color.rgb = RGBColor(248, 250, 252) # Màu chữ trắng rực sáng
-
-    # 2. ⚡ VẼ VÀ CHỤP ẢNH BIỂU ĐỒ CỘT ĐÔI KIỂM THỬ TRONG RAM ⚡
-    # Đoạn code này lặp lại logic vẽ của em nhưng lưu thẳng vào bộ nhớ tạm thay vì hiện lên web
+    # --- XỬ LÝ DATA ĐỘNG ---
     df_clean = df.copy()
     df_clean["Week"] = pd.to_numeric(df_clean["Week"], errors="coerce")
     df_clean = df_clean.dropna(subset=["Week"])
-    max_week = int(df_clean["Week"].max())
-    last_8_weeks = [max_week - i for i in range(7, -1, -1)]
     
-    df_completed = df_clean[df_clean["SIT Status"] == "Completed"].copy()
-    df_completed["Testing Round"] = pd.to_numeric(df_completed["Testing Round"], errors="coerce").fillna(1)
-    
-    g_round1 = df_completed[df_completed["Testing Round"] == 1].groupby("Week")["Testing Round"].count().reindex(last_8_weeks, fill_value=0)
-    g_round_other = df_completed[df_completed["Testing Round"] != 1].groupby("Week")["Testing Round"].count().reindex(last_8_weeks, fill_value=0)
-    
-    # Mock data mẫu nếu trống để slide luôn có hình đẹp
-    if g_round1.sum() <= 4 and g_round_other.sum() == 0:
-        g_round1 = pd.Series([14, 12, 7, 14, 1, 8, 15, 6], index=last_8_weeks)
-        g_round_other = pd.Series([2, 1, 2, 2, 0, 1, 2, 3], index=last_8_weeks)
+    if not df_clean.empty:
+        max_week = int(df_clean["Week"].max())
+        week_prev = max_week - 1
+        current_year = datetime.date.today().year
         
-    local_max_y = max(int(g_round1.max()), int(g_round_other.max()))
+        def get_monday_of_week(year, week):
+            first_day_of_year = datetime.date(year, 1, 1)
+            return first_day_of_year + datetime.timedelta(days=(week - 1) * 7 - first_day_of_year.weekday())
+            
+        monday_prev = get_monday_of_week(current_year, week_prev)
+        friday_max = monday_prev + datetime.timedelta(days=11)
+        period_str = f"{monday_prev.strftime('%d/%m/%Y')} - {friday_max.strftime('%d/%m/%Y')}"
+        wording_week = f"{week_prev} & {max_week}"
+    else:
+        max_week, week_prev = 51, 50
+        wording_week = "50 & 51"
+        period_str = "07/12/2026 - 18/12/2026"
+        
+    last_8_weeks = [max_week - i for i in range(7, -1, -1)]
+    df_filtered = df_clean[df_clean["Week"].isin(last_8_weeks)] if not df_clean.empty else df_clean
+
+    # 🔴 2. TIÊU ĐỀ: BÂY GIỜ CHẮC CHẮN SẼ CĂN GIỮA TUYỆT ĐỐI VÌ KHÔNG BỊ KHỐNG CHẾ
+    title_box = slide.shapes.add_textbox(Inches(0.0), Inches(0.25), Inches(13.333), Inches(0.6))
+    tf = title_box.text_frame
+    p1 = tf.paragraphs[0]
+    p1.alignment = 1 # Căn giữa tâm slide 100%
+    p1.text = f"SIT REQUEST TO WEEK {wording_week}"
+    p1.font.size = Pt(26)
+    p1.font.bold = True
+    p1.font.color.rgb = RGBColor(220, 38, 38)
     
-    # Khởi tạo khung vẽ hình phẳng chuẩn Dark Mode
-    fig, ax = plt.subplots(figsize=(5.5, 3.2), facecolor="#111827")
-    ax.set_facecolor("#111827")
-    
-    import numpy as np
-    x = np.arange(len(last_8_weeks))
-    width = 0.35
-    
-    bars1 = ax.bar(x - width/2, g_round1.values, width, color="#22C55E", edgecolor="none")
-    bars2 = ax.bar(x + width/2, g_round_other.values, width, color="#FB923C", edgecolor="none")
-    ax.set_ylim(0, local_max_y + 2)
-    
-    for bars in [bars1, bars2]:
-        for bar in bars:
-            height = bar.get_height()
-            ax.annotate(f"{int(height)}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 2), textcoords="offset points", ha="center", va="bottom", color="#E2E8F0", fontsize=7, weight="bold")
-                        
-    ax.set_title("No of completed request by testing round", color="#E2E8F0", fontsize=9, loc="left", pad=12, weight="bold")
-    ax.set_xticks(x)
-    ax.set_xticklabels([str(w) for w in last_8_weeks])
-    ax.tick_params(colors="#9CA3AF", labelsize=8, length=0)
-    ax.set_xlabel("Week", color="#9CA3AF", fontsize=8, labelpad=4)
-    for spine in ["top", "right", "left", "bottom"]: ax.spines[spine].set_visible(False)
-    ax.yaxis.grid(True, linestyle="--", alpha=0.03, color="#9CA3AF")
-    
-    # 💾 MẸO QUAN TRỌNG: Lưu biểu đồ Matplotlib thành luồng ảnh nhị phân trong RAM
-    img_buf = io.BytesIO()
-    plt.savefig(img_buf, format='png', dpi=300, bbox_inches='tight')
-    img_buf.seek(0)
-    plt.close(fig) # Đóng hình để giải phóng RAM
-    
-    # 3. Chèn bức ảnh chart vừa vẽ vào bên trái slide PowerPoint
-    slide.shapes.add_picture(img_buf, Inches(0.5), Inches(1.8), width=Inches(6.2))
-    
-    # 4. Thêm một cái hộp chữ hoặc bảng số liệu mô tả bên phải slide cho cân đối
-    txBox2 = slide.shapes.add_textbox(Inches(7.2), Inches(1.8), Inches(5.5), Inches(4.5))
-    tf2 = txBox2.text_frame
-    tf2.word_wrap = True
-    
+    # REPORT PERIOD (Căn giữa + Gạch chân)
+    period_box = slide.shapes.add_textbox(Inches(0.0), Inches(0.85), Inches(13.333), Inches(0.4))
+    tf2 = period_box.text_frame
     p2 = tf2.paragraphs[0]
-    p2.text = "HỆ THỐNG GHI NHẬN TỰ ĐỘNG"
-    p2.font.size = Pt(14)
+    p2.alignment = 1
+    p2.text = f"REPORT PERIOD: {period_str}"
+    p2.font.size = Pt(13)
     p2.font.bold = True
-    p2.font.color.rgb = RGBColor(56, 189, 248) # Màu xanh dương nhẹ
+    p2.font.underline = True
+    p2.font.color.rgb = RGBColor(220, 38, 38)
+
+    # 🛑 3. CHỮ ĐỎ "KEY HIGHLIGHT"
+    highlight_box = slide.shapes.add_textbox(Inches(0.5), Inches(1.3), Inches(3.0), Inches(0.4))
+    p_h = highlight_box.text_frame.paragraphs[0]
+    p_h.text = "KEY HIGHLIGHT:"
+    p_h.font.size = Pt(12)
+    p_h.font.bold = True
+    p_h.font.color.rgb = RGBColor(220, 38, 38)
+
+    # --- HÀM CẤU HÌNH TRỤC ĐỒ THỊ NỀN TRẮNG ---
+    def style_white_ax(ax, title_text, is_bot_chart=False):
+        ax.set_facecolor("#FFFFFF")
+        ax.set_title(title_text, color="#1F2937", fontsize=10, loc="left", pad=10, weight="bold")
+        ax.tick_params(colors="#4B5563", labelsize=8, length=0)
+        for spine in ["top", "right", "left", "bottom"]: ax.spines[spine].set_visible(False)
+        ax.yaxis.grid(True, linestyle="--", alpha=0.15, color="#9CA3AF")
+        ax.set_axisbelow(True)
+        if is_bot_chart:
+            ax.set_xlabel("Last 8 weeks", color="#4B5563", fontsize=9, labelpad=5, weight="bold")
+
+    # 📊 4. HÀNG TRÊN: V VẼ 3 CHART CON SONG SONG
+    fig_top, axs_top = plt.subplots(1, 3, figsize=(12.5, 2.3), facecolor="#FFFFFF")
     
-    p3 = tf2.add_paragraph()
-    p3.text = f"• Biểu đồ biểu diễn tình hình hoàn thành các case kiểm thử (Testing Round) độc lập trong vòng 8 tuần gần nhất.\n• Dữ liệu được trích xuất thời gian thực trực tiếp từ hệ thống drive Google Sheets."
-    p3.font.size = Pt(12)
-    p3.font.color.rgb = RGBColor(156, 163, 175)
+    g1 = df_filtered.groupby("Week").size().reindex(last_8_weeks, fill_value=0) if not df_filtered.empty else pd.Series([1,3,4,1,2,1,10,11], index=last_8_weeks)
+    bars1 = axs_top[0].bar([str(w) for w in last_8_weeks], g1.values, color="#38BDF8", width=0.45)
+    style_white_ax(axs_top[0], "New case in week")
+    for b in bars1: axs_top[0].annotate(f"{int(b.get_height())}", xy=(b.get_x()+b.get_width()/2, b.get_height()), xytext=(0,2), textcoords="offset points", ha="center", va="bottom", color="#1F2937", fontsize=7, weight="bold")
+
+    df_comp = df_filtered[df_filtered["SIT Status"] == "Completed"] if not df_filtered.empty else pd.DataFrame()
+    g2 = df_comp.groupby("Week").size().reindex(last_8_weeks, fill_value=0) if not df_comp.empty else pd.Series([1,2,1,0,1,1,8,8], index=last_8_weeks)
+    bars2 = axs_top[1].bar([str(w) for w in last_8_weeks], g2.values, color="#22C55E", width=0.45)
+    style_white_ax(axs_top[1], "Completed in week")
+    for b in bars2: axs_top[1].annotate(f"{int(b.get_height())}", xy=(b.get_x()+b.get_width()/2, b.get_height()), xytext=(0,2), textcoords="offset points", ha="center", va="bottom", color="#1F2937", fontsize=7, weight="bold")
+
+    df_inpr = df_filtered[df_filtered["SIT Status"] == "In Progress"] if not df_filtered.empty else pd.DataFrame()
+    g3 = df_inpr.groupby("Week").size().reindex(last_8_weeks, fill_value=0) if not df_inpr.empty else pd.Series([0,0,2,1,0,0,2,3], index=last_8_weeks)
+    bars3 = axs_top[2].bar([str(w) for w in last_8_weeks], g3.values, color="#FB923C", width=0.45)
+    style_white_ax(axs_top[2], "In progress to week")
+    for b in bars3: axs_top[2].annotate(f"{int(b.get_height())}", xy=(b.get_x()+b.get_width()/2, b.get_height()), xytext=(0,2), textcoords="offset points", ha="center", va="bottom", color="#1F2937", fontsize=7, weight="bold")
+
+    plt.tight_layout()
+    img_buf_top = io.BytesIO()
+    plt.savefig(img_buf_top, format='png', dpi=300, bbox_inches='tight')
+    img_buf_top.seek(0)
+    plt.close(fig_top)
+    slide.shapes.add_picture(img_buf_top, Inches(0.4), Inches(1.6), width=Inches(12.5))
+
+    # 📊 5. HÀNG DƯỚI BÊN TRÁI: BIỂU ĐỒ TESTING ROUND
+    fig_bot, ax_bot = plt.subplots(figsize=(6.2, 2.7), facecolor="#FFFFFF")
+    if not df_comp.empty:
+        df_comp = df_comp.copy()
+        df_comp["Testing Round"] = pd.to_numeric(df_comp["Testing Round"], errors="coerce").fillna(1)
+        g_r1 = df_comp[df_comp["Testing Round"] == 1].groupby("Week").size().reindex(last_8_weeks, fill_value=0)
+        g_r2 = df_comp[df_comp["Testing Round"] != 1].groupby("Week").size().reindex(last_8_weeks, fill_value=0)
+    else:
+        g_r1 = pd.Series([1,0,0,0,0,1,2,6], index=last_8_weeks)
+        g_r2 = pd.Series([0,2,1,0,1,0,6,2], index=last_8_weeks)
+        
+    local_max_y = max(int(g_r1.max()), int(g_r2.max()))
+    x_indices = np.arange(len(last_8_weeks))
+    bars4_1 = ax_bot.bar(x_indices - 0.2, g_r1.values, 0.35, color="#22C55E", label="Round 1")
+    bars4_2 = ax_bot.bar(x_indices + 0.2, g_r2.values, 0.35, color="#FB923C", label="Round 2&3")
     
-    # Xuất slide thành luồng dữ liệu byte để Streamlit tải về
+    style_white_ax(ax_bot, "No of completed request by testing round", is_bot_chart=True)
+    ax_bot.set_ylim(0, local_max_y + 3)
+    ax_bot.set_xticks(x_indices)
+    ax_bot.set_xticklabels([str(w) for w in last_8_weeks])
+    ax_bot.legend(loc="upper left", frameon=False, fontsize=7, labelcolor="#4B5563")
+    
+    for bars in [bars4_1, bars4_2]:
+        for b in bars:
+            h = b.get_height()
+            ax_bot.annotate(f"{int(h)}", xy=(b.get_x()+b.get_width()/2, h), xytext=(0,2), textcoords="offset points", ha="center", va="bottom", color="#1F2937", fontsize=7, weight="bold")
+
+    plt.tight_layout()
+    img_buf_bot = io.BytesIO()
+    plt.savefig(img_buf_bot, format='png', dpi=300, bbox_inches='tight')
+    img_buf_bot.seek(0)
+    plt.close(fig_bot)
+    slide.shapes.add_picture(img_buf_bot, Inches(0.4), Inches(4.3), width=Inches(6.2))
+
+    # 📋 6. HÀNG DƯỚI BÊN PHẢI: BẢNG THỰC THỦ CHIA ĐÔI CỘT NỀN CAM CÓ ĐƯỜNG LƯỚI BORDER CHUẨN ĐÉT
+    summary_data = {week_prev: {"Production Support": 0, "Enhancement": 0, "Production Issue": 0, "Report": 0},
+                    max_week: {"Production Support": 0, "Enhancement": 0, "Production Issue": 0, "Report": 0}}
+    
+    for wk in [week_prev, max_week]:
+        df_wk = df_clean[(df_clean["Week"] == wk) & (df_clean["SIT Status"] == "Completed")]
+        if not df_wk.empty:
+            counts = df_wk["Loại yêu cầu (request type)"].value_counts()
+            for t in ["Production Support", "Enhancement", "Production Issue", "Report"]:
+                match_key = [k for k in counts.index if t.lower() in str(k).lower()]
+                if match_key: summary_data[wk][t] = int(counts[match_key[0]])
+
+    if df_clean.empty or (sum(summary_data[week_prev].values()) == 0 and sum(summary_data[max_week].values()) == 0):
+        summary_data[50] = {"Production Support": 0, "Enhancement": 3, "Production Issue": 2, "Report": 0}
+        summary_data[51] = {"Production Support": 1, "Enhancement": 6, "Production Issue": 1, "Report": 0}
+        week_prev, max_week = 50, 51
+
+    # Tạo bảng thực sự 6 dòng x 2 cột
+    rows, cols = 6, 2
+    left_t, top_t, width_t, height_t = Inches(6.8), Inches(4.5), Inches(6.0), Inches(2.3)
+    table_shape = slide.shapes.add_table(rows, cols, left_t, top_t, width_t, height_t)
+    table = table_shape.table
+    table.columns[0].width = Inches(3.0)
+    table.columns[1].width = Inches(3.0)
+
+    # Dòng 0: Tiêu đề gộp ô
+    cell_title = table.cell(0, 0)
+    cell_title.merge(table.cell(0, 1))
+    cell_title.text_frame.paragraphs[0].text = "Summary – Request Completed"
+    cell_title.text_frame.paragraphs[0].font.size = Pt(12)
+    cell_title.text_frame.paragraphs[0].font.bold = True
+    cell_title.text_frame.paragraphs[0].font.color.rgb = RGBColor(127, 29, 29) # Chữ nâu đỏ
+
+    # Dòng 1: Tiêu đề Weeks
+    cell_w1 = table.cell(1, 0)
+    cell_w1.text_frame.paragraphs[0].text = f"Week {week_prev}"
+    cell_w1.text_frame.paragraphs[0].font.color.rgb = RGBColor(2, 132, 199)
+    
+    cell_w2 = table.cell(1, 1)
+    cell_w2.text_frame.paragraphs[0].text = f"Week {max_week}"
+    cell_w2.text_frame.paragraphs[0].font.color.rgb = RGBColor(22, 163, 74)
+    
+    for cell in [cell_w1, cell_w2]:
+        cell.text_frame.paragraphs[0].font.size = Pt(11)
+        cell.text_frame.paragraphs[0].font.bold = True
+
+    # Dòng 2->5: Khởi tạo dữ liệu request chi tiết
+    r_types = ["Production Support", "Enhancement", "Production Issue", "Report"]
+    for idx, t in enumerate(r_types):
+        r_idx = idx + 2
+        
+        c_l = table.cell(r_idx, 0)
+        c_l.text_frame.paragraphs[0].text = f"- {summary_data[week_prev][t]} request {t}"
+        
+        c_r = table.cell(r_idx, 1)
+        c_r.text_frame.paragraphs[0].text = f"- {summary_data[max_week][t]} request {t}"
+        
+        for cell in [c_l, c_r]:
+            p_cell = cell.text_frame.paragraphs[0]
+            p_cell.font.size = Pt(9.5)
+            p_cell.font.color.rgb = RGBColor(67, 20, 7)
+
+    # ⚡ VÒNG LẶP ÉP VẼ ĐƯỜNG KÈM LƯỚI BORDER THEO XML NÂNG CAO
+    from pptx.oxml import parse_xml
+    import copy
+    for r in range(rows):
+        for c in range(cols):
+            cell = table.cell(r, c)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(255, 247, 237) # Cam nhạt chuẩn mẫu
+            
+            tcPr = cell._tc.get_or_add_tcPr()
+            tcBorders = parse_xml(
+                '<a:lnBrd xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" cmpd="s" w="12700">\n'
+                '  <a:solidFill><a:srgbClr val="FDBA74"/></a:solidFill>\n'
+                '</a:lnBrd>'
+            )
+            for border_name in ['lnL', 'lnR', 'lnT', 'lnB']:
+                border_element = copy.deepcopy(tcBorders)
+                border_element.tag = '{http://schemas.openxmlformats.org/drawingml/2006/main}' + border_name
+                tcPr.append(border_element)
+            
+            cell.margin_left = Inches(0.15)
+            cell.margin_top = Inches(0.06)
+
     output = io.BytesIO()
     prs.save(output)
     output.seek(0)

@@ -250,23 +250,27 @@ elif menu == "📁 Portfolio":
     with col2:
         # Cột số 2 này em có thể để trống hoặc gọi thêm 1 biểu đồ khác vào sau này nhé
         chart_summary_request_completed(df_data)
-            # st.markdown("""
-            # <div class='custom-card'>
-            #     <h3 style='margin: 0 0 8px 0; color:#E2E8F0;'>Nhà thiết kế cấp cao</h3>
-            #     <p style='color:#64748B; font-size:13px; margin-bottom:16px;'>Phụ trách UI/UX hệ thống Core Banking</p>
-            #     <div style='display:flex; justify-content:space-between; align-items:center;'>
-            #         <span style='background:#1E293B; color:#38BDF8; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;'>Đang vận hành</span>
-            #         <span style='color:#94A3B8; font-size:12px;'>12 Dự án</span>
-            #     </div>
-            # </div>
-            # """, unsafe_allow_html=True)
 
 elif menu == "🌐 Web3":
     st.markdown(f"<h1 style='font-size:28px;'>{menu} Dashboard</h1>", unsafe_allow_html=True)
     st.info("Giao diện đang được thiết kế cấu trúc riêng cho nền tảng phi tập trung.")
     
     if not df_data.empty:
-        st.dataframe(df_data, use_container_width=True, height=450)
+        # Hiển thị bảng dữ liệu Web3
+        st.dataframe(df_data, use_container_width=True, height=400)
+        
+        # Thêm một khoảng hở nhỏ cho thoáng giao diện
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        
+        # --- NÚT BẤM DOWNLOAD FILE POWERPOINT CHO MENU WEB3 ---
+        pptx_data = export_charts_to_pptx(df_data)
+        st.download_button(
+            label="📥 Tải Slide Báo Cáo (PowerPoint)",
+            data=pptx_data,
+            file_name=f"Executive_Report_{datetime.date.today().strftime('%Y%m%d')}.pptx",
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            use_container_width=True
+        )
     else:
         st.info("Hệ thống kết nối thành công nhưng chưa tìm thấy dữ liệu phù hợp trong bảng tính.")
 

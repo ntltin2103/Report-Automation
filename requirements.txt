@@ -4,3 +4,5 @@ datetime
 streamlit_option_menu
 gspread 
 oauth2client
+matplotlib
+python-pptx

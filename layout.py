@@ -4,32 +4,38 @@ from validation_report import *
 from css import layout_css
 import datetime
 
-# 1. Cài đặt ban đầu
+# =========================================================================
+# 1. INITIAL SETUP & BRANDING
+# =========================================================================
 st.set_page_config(
     layout="wide", 
-    page_title="Automation Report Team", 
+    page_title="Executive Validation Report", 
     page_icon="📊",
     initial_sidebar_state="expanded"
 )
 
-# Áp dụng giao diện cho báo cáo
+# Áp dụng bộ CSS siêu mịn đã tinh chỉnh riêng cho báo cáo cấp cao
 layout_css()
 
-# Khởi tạo menu mặc định lần đầu chạy
+# Khởi tạo trạng thái menu mặc định nếu hệ thống chạy lần đầu
 if "current_menu" not in st.session_state:
     st.session_state.current_menu = "✨ Summary"
 
 
-# 2. Tải dữ liệu chung một lần
+# =========================================================================
+# 💡 ĐIỂM VÀNG TỐI ƯU: GỌI DATA CHUNG 1 LẦN DUY NHẤT CHO TOÀN BỘ APP
+# =========================================================================
 SPREADSHEET_NAME = "GS connector"
 
-# Hiển thị trạng thái đang đồng bộ dữ liệu
-with st.spinner("Đang đồng bộ dữ liệu từ Google Sheets..."):
-    # Dữ liệu này dùng chung cho toàn bộ ứng dụng
+# Dùng st.spinner ở trên cùng, chỉ chạy đúng 1 lần khi load app hoặc đổi dữ liệu
+with st.spinner("🔄 Hệ thống đang đồng bộ dữ liệu tổng thể từ Google Sheets..."):
+    # Biến df_data này bây giờ là biến TOÀN CỤC (Global), menu nào cũng xài được
     df_data = get_google_sheet_data(SPREADSHEET_NAME)
 
 
-# 3. Menu bên trái
+# =========================================================================
+# 2. SIDEBAR NAVIGATION SYSTEM (REDESIGNED)
+# =========================================================================
 with st.sidebar:
     st.markdown("<h2 style='color: #F8FAFC; font-size: 22px; font-weight:700; padding-left:8px; margin-bottom: 2rem;'>Menu</h2>", unsafe_allow_html=True)
     
@@ -39,7 +45,7 @@ with st.sidebar:
     if st.button("📁 Chart", use_container_width=True):
         st.session_state.current_menu = "📁 Report"
     if st.button("🌐 Download PPT", use_container_width=True):
-        st.session_state.current_menu = "🌐 Download PPT"
+        st.session_state.current_menu = "🌐 Web3"
     # if st.button("🚀 SaaS", use_container_width=True):
     #     st.session_state.current_menu = "🚀 SaaS"
     
@@ -56,7 +62,9 @@ with st.sidebar:
     #     st.session_state.current_menu = "💳 Finance"
 
 
-# 4. Thanh đầu trang
+# =========================================================================
+# 3. TOP EXECUTIVE HEADER BAR
+# =========================================================================
 st.markdown('<div class="topbar-wrapper">', unsafe_allow_html=True)
 
 h_logo, h_search, h_btn, h_space, h_profile = st.columns([1.2, 3.8, 1.5, 1.3, 0.4])
@@ -67,14 +75,14 @@ with h_logo:
 if "search_input_value" not in st.session_state:
     st.session_state["search_input_value"] = ""
 
-# Xóa nội dung tìm kiếm khi bấm nút Clear
+# Hàm callback xử lý xóa sạch từ khóa khi bấm nút Clear
 def clear_search_callback():
-    st.session_state["search_input_key"] = ""
-    st.toast("Đã xóa từ khóa tìm kiếm!", icon="")
+    st.session_state["search_input_key"] = ""  # Reset ô text_input về rỗng
+    st.toast("🧹 Đã xóa từ khóa tìm kiếm!", icon="✨")
 
-# Khung tìm kiếm
+# --- 2. TRONG KHỐI ô tìm kiếm của em ---
 with h_search:
-    # Chia khung thành vùng nhập và nút xóa
+    # Chia h_search thành 2 cột nhỏ: 85% cho ô nhập, 15% cho nút Clear
     st.markdown('<div class="fixed-search-input">', unsafe_allow_html=True)
     col_input, col_clear = st.columns([0.85, 0.15])
     
@@ -93,7 +101,7 @@ with h_search:
             
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Hiển thị kết quả tìm kiếm
+# --- 3. LOGIC XỬ LÝ KẾT QUẢ HIỂN THỊ (BUNG FULL MÀN HÌNH NGOÀI H_SEARCH) ---
 if search_val:
     query = search_val.strip().lower()
     
@@ -110,7 +118,7 @@ if search_val:
         df_search_result = df_data[mask]
         
         if not df_search_result.empty:
-            st.toast(f"Tìm thấy {len(df_search_result)} kết quả!", icon="")
+            st.toast(f"🎉 Tìm thấy {len(df_search_result)} kết quả!", icon="✅")
             st.markdown("---")
             st.markdown(f"### 🔍 Kết quả tìm kiếm toàn cầu cho từ khóa: `{search_val}`")
             
@@ -118,15 +126,15 @@ if search_val:
             st.dataframe(df_search_result, use_container_width=True, height=350)
             st.markdown("---")
         else:
-            st.toast("Không tìm thấy, vui lòng nhập lại!", icon="")
-            st.warning(f"Không tìm thấy kết quả nào khớp với: '{search_val}'. Vui lòng kiểm tra lại số request hoặc tên yêu cầu.")
+            st.toast("❌ Không tìm thấy, vui lòng nhập lại!", icon="⚠️")
+            st.warning(f"🚨 Không tìm thấy kết quả nào khớp với: '{search_val}'. Vui lòng kiểm tra lại số request hoặc tên yêu cầu.")
     else:
-        st.toast("Dữ liệu hệ thống đang trống!", icon="")
+        st.toast("⚠️ Dữ liệu hệ thống đang trống!", icon="📊")
 with h_btn:
     st.button("Tìm kiếm", use_container_width=True)
 
 with h_space:
-        st.markdown("<p style='margin:0; color:#10B981; font-weight:600; text-align:right; margin:0; font-size:13px; white-space:nowrap;'>Kết nối ổn định</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#10B981; font-weight:600; text-align:right; margin:0; font-size:13px; white-space:nowrap;'>✓ Kết nối ổn định</p>", unsafe_allow_html=True)
 
 with h_profile:
     st.markdown("<div style='text-align:right; font-size:18px; color:#9CA3AF; cursor:pointer; line-height:1;'>👤</div>", unsafe_allow_html=True)
@@ -135,11 +143,13 @@ st.markdown('</div>', unsafe_allow_html=True) # Đóng div topbar-wrapper
 
 st.markdown("<hr style='margin-top: 1rem; margin-bottom: 2rem; border-color: #1F2937;'>", unsafe_allow_html=True)
 
-# 5. Chuyển màn hình theo menu
+# =========================================================================
+# 4. DYNAMIC INTERFACE ROUTER (Dựa trên biến 'menu')
+# =========================================================================
 menu = st.session_state.current_menu
 
 if menu == "✨ Summary":
-    # Bố cục nút làm mới dữ liệu
+    # Layout cho nút refresh data
     left, center, right = st.columns([6, 3, 1])
     with left:
         st.markdown("""
@@ -165,7 +175,7 @@ if menu == "✨ Summary":
     
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Khối thống kê
+    # --- KHỐI METRICS ---
     if not df_data.empty:
         # 1. Tổng số yêu cầu = Đếm tổng số dòng có trong cột "REQUEST" (loại bỏ các dòng trống nếu có)
         total_requests = int(df_data["REQUEST"].dropna().count())
@@ -190,7 +200,7 @@ if menu == "✨ Summary":
         # Giá trị dự phòng nếu data load lên bị trống
         total_requests, in_progress_count, prod_issue_count, sla_value = 0, 0, 0, "0.0%"
 
-    # Hiển thị các chỉ số trên giao diện
+    # --- BIỂU DIỄN GIAO DIỆN METRICS LÊN STREAMLIT ---
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.markdown(f"""
@@ -239,7 +249,7 @@ if menu == "✨ Summary":
         </div>
         """, unsafe_allow_html=True)
 
-    # Hiển thị bảng dữ liệu
+    # HIỂN THỊ BẢNG DỮ LIỆU TẠI AI ASSETS
     if not df_data.empty:
         st.dataframe(df_data, use_container_width=True, height=400)
     else:
@@ -278,7 +288,7 @@ elif menu == "📁 Report":
         with c3:
             chart_inprogress_8_week(df_data,max_y=shared_max_y)
     else:
-        st.warning("Không thể vẽ biểu đồ do dữ liệu trống.")
+        st.warning("⚠️ Không thể vẽ biểu đồ do dữ liệu trống.")
         
     st.markdown("<br><br><hr style='border-color: #1F2937; margin: 2rem 0;'>", unsafe_allow_html=True)
 
@@ -293,21 +303,21 @@ elif menu == "📁 Report":
         # Cột số 2 này em có thể để trống hoặc gọi thêm 1 biểu đồ khác vào sau này nhé
         chart_summary_request_completed(df_data)
 
-elif menu == "🌐 Download PPT":
+elif menu == "🌐 Web3":
     st.markdown(f"<h1 style='font-size:28px;'>{menu} Dashboard</h1>", unsafe_allow_html=True)
     st.info("Down Report tại đây.")
     
     if not df_data.empty:
-        # Hiển thị bảng dữ liệu Download PPT
+        # Hiển thị bảng dữ liệu Web3
         # st.dataframe(df_data, use_container_width=True, height=400)
         
         # Thêm một khoảng hở nhỏ cho thoáng giao diện
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
         
-        # --- NÚT BẤM DOWNLOAD FILE POWERPOINT CHO MENU Download PPT ---
+        # --- NÚT BẤM DOWNLOAD FILE POWERPOINT CHO MENU WEB3 ---
         # pptx_data = export_charts_to_pptx(df_data)
         st.download_button(
-            label="Tải Slide Báo Cáo (PowerPoint)",
+            label="📥 Tải Slide Báo Cáo (PowerPoint)",
             data=export_charts_to_pptx(df_data),
             file_name=f"Executive_Report_{datetime.date.today().strftime('%Y%m%d')}.pptx",
             mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",

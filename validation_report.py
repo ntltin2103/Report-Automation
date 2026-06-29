@@ -10,7 +10,7 @@ from pptx.dml.color import RGBColor
 import datetime
 import numpy as np
 import io
-# Định nghĩa quyền truy cập
+# Quyền truy cập Google Sheets
 SCOPE = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/spreadsheets",
@@ -18,7 +18,7 @@ SCOPE = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-#Hàm để lấy data từ Google Sheet
+# Lấy dữ liệu từ Google Sheet
 @st.cache_data(ttl=600)
 def get_google_sheet_data(spreadsheet_name):
     try:
@@ -37,7 +37,7 @@ def get_google_sheet_data(spreadsheet_name):
         st.error(f"Lỗi kết nối dữ liệu: {e}")
         return pd.DataFrame()
 
-#Hàm để vẽ biểu đồ data của 8 tuần gần nhất
+# Vẽ biểu đồ 8 tuần gần nhất
 def chart_8_week(df, max_y=None):
     """Hàm tính tổng sumreq theo Week dựa trên 8 tuần lớn nhất và trả về data + vẽ chart"""
     df_clean = df.copy()
@@ -88,7 +88,7 @@ def chart_8_week(df, max_y=None):
     return max_y
 
 
-# --- BIỂU ĐỒ 2: COMPLETED (ÉP TRỤC Y THEO MAX Y) ---
+# Biểu đồ 2: Số request đã hoàn thành
 def chart_completed_8_week(df, max_y):
     """Hàm đếm số lượng request đã Completed với trục Y đồng bộ"""
     df_clean = df.copy()
@@ -131,7 +131,7 @@ def chart_completed_8_week(df, max_y):
     st.pyplot(fig)
 
 
-# --- BIỂU ĐỒ 3: IN PROGRESS (ÉP TRỤC Y THEO MAX Y) ---
+# Biểu đồ 3: Request đang xử lý
 def chart_inprogress_8_week(df, max_y):
     """Hàm đếm số lượng request đang In Progress với trục Y đồng bộ"""
     df_clean = df.copy()
@@ -173,7 +173,7 @@ def chart_inprogress_8_week(df, max_y):
     ax.set_axisbelow(True)
     st.pyplot(fig)
 
-#hàm tính chart testing
+# Vẽ biểu đồ theo vòng test
 def chart_testing_round_8_week(df):
     """Hàm vẽ biểu đồ cột nhóm độc lập - Tách chữ ra HTML để chống chồng chữ hoàn toàn"""
     df_clean = df.copy()
@@ -207,14 +207,14 @@ def chart_testing_round_8_week(df):
 
     local_max_y = max(int(g_round1.max()), int(g_round_other.max()))
 
-    # --- BƯỚC 1: TIÊU ĐỀ IN ĐẬM VÀ GẠCH CHÂN ---
+    # Tiêu đề biểu đồ
     st.markdown(
         "<p style='color: #E2E8F0; font-size: 14px; font-weight: 700; text-decoration: underline; margin-bottom: 8px; letter-spacing: 0.02em;'>"
         "No of completed request by testing round</p>", 
         unsafe_allow_html=True
     )
     
-    # --- BƯỚC 2: THIẾT KẾ DÒNG SUBTITLE VÀ LEGEND NẰM NGANG BẰNG HTML (CHỐNG CHỒNG CHỮ) ---
+    # Chú thích và legend của biểu đồ
     st.markdown("""
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
         <span style="color: #9CA3AF; font-size: 12px; font-weight: 500;">Last 8 weeks</span>
@@ -231,7 +231,7 @@ def chart_testing_round_8_week(df):
     </div>
     """, unsafe_allow_html=True)
 
-    # --- BƯỚC 3: CẤU HÌNH ĐỒ THỊ MATPLOTLIB (figsize thu nhỏ lại một chút để vừa vặn khi chia đôi cột) ---
+    # Cấu hình biểu đồ
     fig, ax = plt.subplots(figsize=(5.2, 2.3), facecolor="none")
     ax.set_facecolor("none")
 
@@ -269,7 +269,7 @@ def chart_testing_round_8_week(df):
 
     st.pyplot(fig)
 
-#Hàm để tính summary lại request của 2 tuần
+# Tóm tắt request hoàn thành của 2 tuần gần nhất
 def chart_summary_request_completed(df):
     """Hàm hiển thị bảng tóm tắt Request Completed của 2 tuần gần nhất (vào col2)"""
     df_clean = df.copy()
@@ -277,15 +277,15 @@ def chart_summary_request_completed(df):
     df_clean = df_clean.dropna(subset=["Week"])
 
     if df_clean.empty:
-        st.warning("⚠️ Không tìm thấy dữ liệu hợp lệ để lập bảng tóm tắt.")
+        st.warning("Không tìm thấy dữ liệu hợp lệ để lập bảng tóm tắt.")
         return
 
-    # --- BƯỚC 1: TÌM MỐC 2 TUẦN GẦN NHẤT TRONG DATA ---
+    # Tìm 2 tuần gần nhất trong dữ liệu
     max_week = int(df_clean["Week"].max())
     week_prev = max_week - 1
     last_2_weeks = [week_prev, max_week]
 
-    # --- BƯỚC 2: LỌC ĐIỀU KIỆN "SIT Status" == "Completed" ---
+    # Chọn các request đã hoàn thành
     df_completed = df_clean[df_clean["SIT Status"] == "Completed"]
 
     # Định nghĩa danh sách các loại yêu cầu cố định theo mô tả của em
@@ -317,14 +317,14 @@ def chart_summary_request_completed(df):
         last_2_weeks = [20, 21]
         week_prev, max_week = 20, 21
 
-    # --- BƯỚC 3: TIÊU ĐỀ IN ĐẬM VÀ GẠCH CHÂN ---
+    # Tiêu đề bảng tóm tắt
     st.markdown(
         "<p style='color: #E2E8F0; font-size: 14px; font-weight: 700; text-decoration: underline; margin-bottom: 8px; letter-spacing: 0.02em;'>"
         "Summary – Request Completed</p>", 
         unsafe_allow_html=True
     )
 
-    # --- BƯỚC 4: RENDER GIAO DIỆN CHUẨN DASHBOARD CAO CẤP ---
+    # Hiển thị bảng tóm tắt
     # Sử dụng thẻ div flexbox chia đôi không gian để đồng bộ với biểu đồ cột đôi kế bên
     html_content = (
         f'<div style="display: flex; gap: 20px; background: #111827; border: 1px solid #1F2937; padding: 12px 16px; border-radius: 12px; height: 195px; box-sizing: border-box; margin-top: 5px;">'
@@ -358,7 +358,7 @@ def chart_summary_request_completed(df):
 
     st.markdown(html_content, unsafe_allow_html=True)
 
-#Hàm xử lý down chart ra file pptx SLIDE 1:
+# Xuất biểu đồ ra file PowerPoint
 def export_charts_to_pptx(df):
     """Hàm dựng Slide 1 HOÀN HẢO: Xóa bỏ hoàn toàn khống chế Layout mặc định của PowerPoint"""
     prs = Presentation()

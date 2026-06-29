@@ -5,22 +5,22 @@ def layout_css():
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
-        /* ĐỒNG BỘ FONT CHỮ TOÀN APP */
+        /* Font dùng chung cho toàn bộ giao diện */
         html, body, [data-testid="stAppViewContainer"], p, h1, h2, h3, h4, h5, h6 {
         font-family: 'Inter', sans-serif !important;
         }
 
-        /* Ép font riêng cho text bên trong markdown nhưng chừa các icon đặc biệt ra */
+        /* Font cho nội dung văn bản */
         .stMarkdown div p, .stMarkdown span:not([class*="material"]) {
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* Chỉ ép font cho text của nút bấm, giữ nguyên font mã hóa icon hệ thống */
+        /* Font cho nút bấm */
         div.stButton > button div p, div.stButton > button {
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* 1. THAY ĐỔI TOÀN BỘ NỀN (TÔNG XÁM ĐEN TRẦM - DỊU MẮT) */
+        /* Màu nền chung của app */
         [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
             background-color: #0B0F17 !important; 
             color: #E2E8F0 !important;
@@ -37,14 +37,14 @@ def layout_css():
             font-weight: 600 !important;
         }
 
-        /* 2. SIDEBAR SANG TRỌNG */
+        /* Thanh menu bên trái */
         [data-testid="stSidebar"] {
             background-color: #070A10 !important; 
             border-right: 1px solid #1E293B !important;
             width: 280px !important;
         }
 
-        /* 3. TỐI ƯU BẢNG DỮ LIỆU GOOGLE SHEET (DỄ NHÌN, SẠCH SẼ) */
+        /* Bảng dữ liệu */
         [data-testid="stDataFrame"] {
             background-color: #111827 !important;
             border: 1px solid #1F2937 !important;
@@ -58,7 +58,7 @@ def layout_css():
             border-radius: 8px !important;
         }
         
-        /* 4. THANH TÌM KIẾM TOÀN CỤC MỀM MẠI */
+        /* Ô tìm kiếm */
         .stTextInput input {
             background-color: #111827 !important;
             color: #F3F4F6 !important;
@@ -72,7 +72,7 @@ def layout_css():
             box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1) !important;
         }
 
-        /* 5. NÚT BẤM (SIDEBAR & TOPBAR) ĐỒNG BỘ SẮC NÉT */
+        /* Nút bấm */
         div.stButton > button {
             background-color: #111827 !important; 
             color: #9CA3AF !important; 
@@ -92,7 +92,7 @@ def layout_css():
             box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1) !important;
         }
 
-        /* Sửa lỗi chữ đen ẩn của nút "Cấu hình bộ lọc" trên Topbar */
+        /* Màu chữ cho nút trên thanh đầu trang */
         [data-testid="stMainBlockContainer"] div.stButton > button {
             color: #E2E8F0 !important;
             font-size: 13px !important;
@@ -101,7 +101,7 @@ def layout_css():
             color: #38BDF8 !important;
         }
 
-        /* Tiêu đề nhóm menu (Services, Tools) */
+        /* Tiêu đề nhóm menu */
         .stMarkdown h3 {
             font-size: 11px !important;
             text-transform: uppercase !important;
@@ -116,7 +116,7 @@ def layout_css():
             margin: 1.5rem 0 !important;
         }
 
-        /* TỐI ƯU CƠ CHẾ HIỂN THỊ ALERT/SUCCESS MẶC ĐỊNH CỦA STREAMLIT */
+        /* Cách hiển thị thông báo */
         [data-testid="stNotification"] {
             background-color: rgba(16, 185, 129, 0.08) !important;
             border: 1px solid rgba(16, 185, 129, 0.2) !important;
@@ -129,15 +129,12 @@ def layout_css():
             font-size: 13px !important;
         }
 
-        /* =========================================================================
-           ⚡ KHỐI CẬP NHẬT MỚI: GIẢI QUYẾT LỆCH HÀNG CHÊN VÊNH CỦA TOPBAR
-           ========================================================================= */
-        /* Ép toàn bộ các phần tử trong hàng ngang của Topbar phải thẳng tâm trục dọc */
+        /* Căn chỉnh phần đầu trang */
         .topbar-wrapper [data-testid="stHorizontalBlock"] {
             align-items: center !important;
         }
 
-        /* Triệt tiêu khoảng trống thừa vô hình bên trên ô Text Input */
+        /* Giảm khoảng cách trên ô nhập */
         .fixed-search-input [data-testid="stWidgetLabel"] {
             display: none !important;
         }

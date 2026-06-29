@@ -7,7 +7,7 @@ import datetime
 # 1. Cài đặt ban đầu
 st.set_page_config(
     layout="wide", 
-    page_title="Executive Validation Report", 
+    page_title="Automation Report Team", 
     page_icon="📊",
     initial_sidebar_state="expanded"
 )
